@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PunjabiExamBot Renew Session</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      h1 {
+        color: #333;
+      }
+      #renewButton {
+        background-color: #5cb85c;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
+      }
+      #renewButton:hover {
+        background-color: #4cae4c;
+      }
+      #message {
+        margin-top: 20px;
+        font-size: 1.1em;
+        color: #333;
+      }
+      /* Basic styling for ad placeholders */
+      .ad-placeholder {
+        width: 300px;
+        height: 250px;
+        background-color: #ddd;
+        margin: 20px auto;
+        text-align: center;
+        line-height: 250px;
+        color: #555;
+        border: 1px solid #bbb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>PunjabiExamBot Session Expired</h1>
+      <p>Your quiz session has expired. Please renew to continue.</p>
+
+      <!-- Ad Placeholder -->
+      <div class="ad-placeholder">Advertisement 1</div>
+
+      <button id="renewButton">Renew Bot</button>
+
+      <div id="message"></div>
+
+      <!-- Ad Placeholder -->
+      <div class="ad-placeholder">Advertisement 2</div>
+    </div>
+
+    <script>
+      document
+        .getElementById("renewButton")
+        .addEventListener("click", async () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const userId = urlParams.get("userId");
+
+          if (!userId) {
+            document.getElementById("message").innerText =
+              "Error: User ID not found in URL.";
+            document.getElementById("message").style.color = "red";
+            return;
+          }
+
+          try {
+            const response = await fetch("/api/session/renew", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ userId: userId }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              document.getElementById("message").innerText = data.message;
+              document.getElementById("message").style.color = "green";
+            } else {
+              document.getElementById(
+                "message"
+              ).innerText = `Error: ${data.message}`;
+              document.getElementById("message").style.color = "red";
+            }
+          } catch (error) {
+            document.getElementById("message").innerText =
+              "An error occurred while renewing the session.";
+            document.getElementById("message").style.color = "red";
+            console.error("Error:", error);
+          }
+        });
+    </script>
+  </body>
+</html>
