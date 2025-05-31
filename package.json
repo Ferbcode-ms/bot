@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node server/server.js",
     "bot": "node bot/telegramBot.js",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.js",
+    "start-all": "concurrently \"npm start\" \"npm run bot\""
   },
   "keywords": [
     "telegram",
@@ -21,13 +22,14 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.6.7",
     "dotenv": "^16.0.0",
     "express": "^4.17.3",
     "mongoose": "^6.2.10",
-    "telegraf": "^4.8.5",
-    "axios": "^1.6.7"
+    "telegraf": "^4.8.5"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "nodemon": "^2.0.15"
   }
 }
