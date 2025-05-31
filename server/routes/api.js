@@ -84,24 +84,39 @@ router.post("/session/start", async (req, res) => {
       return res.status(400).json({ message: "userId is required" });
     }
 
-    // Always create a new session with current timestamp
-    const session = new UserSession({
-      userId: userId,
-      sessionStartTime: new Date(),
-    });
-    await session.save();
+    // Find if an active session exists for the user
+    let session = await UserSession.findOne({ userId: userId });
 
-    console.log("New session started:", {
-      userId,
-      startTime: session.sessionStartTime,
-    });
-
-    res.status(201).json({
-      message: "Session started successfully",
-      startTime: session.sessionStartTime,
-    });
+    if (session) {
+      // If session exists, update its start time
+      session.sessionStartTime = new Date();
+      await session.save();
+      console.log("Existing session updated for user:", {
+        userId,
+        startTime: session.sessionStartTime,
+      });
+      res.status(200).json({
+        message: "Session updated successfully",
+        startTime: session.sessionStartTime,
+      });
+    } else {
+      // If no session exists, create a new one
+      session = new UserSession({
+        userId: userId,
+        sessionStartTime: new Date(),
+      });
+      await session.save();
+      console.log("New session created for user:", {
+        userId,
+        startTime: session.sessionStartTime,
+      });
+      res.status(201).json({
+        message: "Session created successfully",
+        startTime: session.sessionStartTime,
+      });
+    }
   } catch (err) {
-    console.error("Error starting session:", err);
+    console.error("Error starting/updating session:", err);
     res.status(500).json({ message: err.message });
   }
 });

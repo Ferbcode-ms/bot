@@ -3,147 +3,242 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Spider-Man Fans</title>
+    <title>Marvel Fan Hub</title>
+    <!-- Add Google Font link -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
     <style>
       * {
         box-sizing: border-box;
-      }
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         margin: 0;
         padding: 0;
-        background: linear-gradient(to bottom right, #8a1313, #d62828);
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif; /* Modern sans-serif stack */
+        background-color: #111; /* Very dark background */
         color: #fff;
-        overflow-x: hidden; /* Prevent horizontal scroll */
+        line-height: 1.6;
+        overflow-x: hidden;
       }
       .navbar {
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 15px 20px;
+        background-color: #111; /* Match body background */
+        padding: 20px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid #333; /* Subtle separator */
+      }
+      /* Apply Bebas Neue to navbar logo and links */
+      .navbar .logo,
+      .navbar nav a {
+        font-family: "Bebas Neue", sans-serif;
       }
       .navbar .logo {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: bold;
         color: #fff;
+        text-transform: uppercase;
       }
       .navbar nav a {
         color: #fff;
         text-decoration: none;
-        margin: 0 10px;
-        font-weight: 600;
-        transition: text-decoration 0.3s ease;
+        margin-left: 20px; /* Space links */
+        font-size: 14px; /* Smaller font */
+        transition: color 0.3s ease;
+        text-transform: uppercase;
       }
       .navbar nav a:hover {
-        text-decoration: underline;
+        color: #bbb; /* Subtle hover effect */
       }
       .hero-section {
         position: relative;
-        padding: 80px 20px;
-        max-width: 1200px;
-        margin: auto;
+        height: 80vh; /* Tall hero section */
+        /* Update background to a Marvel-themed image placeholder */
+        background: url("placeholder_marvel_hero_background.jpg") no-repeat
+          center center/cover;
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start; /* Align content to the left */
+        color: #fff;
+        padding: 0 50px; /* Padding on sides */
       }
       .hero-content {
-        max-width: 50%;
-        z-index: 1;
+        max-width: 600px; /* Limit content width */
       }
-      .hero-content h1 {
-        font-size: 6em;
-        margin: 0 0 20px 0;
-        color: #ffcc00; /* Gold-like color */
-        text-shadow: 4px 4px #000;
+      .hero-section h1 {
+        font-size: 4em; /* Large heading */
+        margin-bottom: 10px;
+        color: #fff; /* White */
       }
-      .hero-content h2 {
-        font-size: 2em;
-        margin: 0 0 10px 0;
-        color: #fff;
+      .hero-section .subtitle {
+        font-size: 1.2em;
+        margin-bottom: 20px;
+        color: #ccc; /* Lighter text */
       }
-      .hero-content p {
-        font-size: 1.1em;
-        line-height: 1.6;
-      }
-      .movie-posters {
-        display: flex;
-        gap: 20px;
-        margin-top: 30px;
-      }
-      .movie-poster-placeholder {
-        width: 150px;
-        height: 220px;
-        background-color: #333;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #ccc;
-        text-align: center;
-        border-radius: 5px;
-        border: 2px solid #fff;
-        font-size: 0.9em;
-      }
-      .spider-man-image-placeholder {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 40%; /* Adjust size as needed */
-        height: 600px; /* Adjust height as needed */
-        background-color: #555; /* Placeholder color */
-        /* Add background-image here in a real scenario */
-        background-size: contain;
-        background-repeat: no-repeat;
-        background-position: bottom right;
-        z-index: 0;
-      }
-      .quote-box {
-        position: absolute;
-        top: 100px;
-        right: 20px;
-        max-width: 250px;
-        font-style: italic;
-        font-size: 1.1em;
-        color: #fff;
-        text-align: right;
-        z-index: 1;
-      }
-      .quote-box em {
-        display: block;
-        margin-top: 5px;
-        font-style: normal;
+      .button {
+        background-color: #fff; /* White button */
+        color: #111; /* Dark text */
+        padding: 12px 25px;
+        border: none;
+        border-radius: 3px; /* Slightly rounded */
+        font-size: 15px;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+        text-transform: uppercase;
         font-weight: bold;
       }
-      .share-button {
-        position: absolute;
-        bottom: 20px;
-        right: 20px;
-        color: #fff;
-        text-decoration: none;
-        font-weight: bold;
-        z-index: 1;
+      .button:hover {
+        opacity: 0.8; /* Subtle hover */
       }
-
-      /* Sections for Gallery, Contact, Activate Bot */
-      .section {
-        padding: 60px 20px;
+      .container {
         max-width: 1200px;
-        margin: auto;
-        text-align: center;
+        margin: 40px auto; /* Spacing */
+        padding: 0 20px;
+      }
+      .section {
+        margin-bottom: 60px;
+        padding: 40px 0;
+      }
+      .section.alt-background {
+        background-color: #1a1a1a; /* Slightly lighter dark */
+        padding: 60px 20px;
+        margin: 40px 0;
       }
       .section h2 {
         font-size: 2.5em;
-        margin-bottom: 30px;
+        color: #fff; /* White heading */
+        margin-bottom: 40px;
+        text-align: center;
+        text-transform: uppercase;
       }
-
+      .section .section-intro {
+        text-align: center;
+        font-size: 1.1em;
+        color: #ccc;
+        margin-bottom: 40px;
+      }
+      .three-col-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+      }
+      .content-block {
+        text-align: center;
+      }
+      .content-block img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+      .content-block h3 {
+        font-size: 1.5em;
+        margin-bottom: 10px;
+        color: #fff;
+      }
+      .content-block p {
+        color: #ccc;
+        font-size: 0.95em;
+      }
+      .featured-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .featured-item {
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+      }
+      .featured-item img {
+        display: block;
+        width: 100%;
+        height: 200px; /* Fixed height for consistency */
+        object-fit: cover; /* Cover the area */
+        transition: transform 0.3s ease;
+      }
+      .featured-item:hover img {
+        transform: scale(1.05); /* Subtle zoom effect */
+      }
+      .featured-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.7) 0%,
+          rgba(0, 0, 0, 0) 100%
+        );
+        padding: 15px;
+        color: #fff;
+      }
+      .featured-overlay h4 {
+        margin: 0;
+        font-size: 1.2em;
+      }
+      .featured-overlay p {
+        margin: 5px 0 0;
+        font-size: 0.9em;
+        color: #ccc;
+      }
+      /* CSS for the glitchy image effect */
+      #glitchy-image {
+        max-width: 100%;
+        height: auto;
+        /* Basic glitch effect using filters - adjust values as needed */
+        filter: grayscale(50%) contrast(150%) hue-rotate(90deg);
+        /* You can add more complex effects with animations, clip-path, etc. */
+        /* Example: transform: skewX(-10deg); */
+      }
+      @keyframes glitch-animation {
+        0% {
+          clip-path: inset(10% 0 85% 0);
+        }
+        20% {
+          clip-path: inset(50% 0 30% 0);
+        }
+        40% {
+          clip-path: inset(5% 0 70% 0);
+        }
+        60% {
+          clip-path: inset(95% 0 0 0);
+        }
+        80% {
+          clip-path: inset(20% 0 75% 0);
+        }
+        100% {
+          clip-path: inset(40% 0 40% 0);
+        }
+      }
+      /* Apply animation and position for glitch effect */
+      #glitchy-image.glitch {
+        position: relative;
+        animation: glitch-animation 0.5s infinite step-end;
+        overflow: hidden;
+      }
+      #message {
+        margin-top: 20px;
+        font-size: 1.1em;
+        color: #5cb85c; /* Green for success */
+        text-align: center;
+      }
+      #message.error {
+        color: #e50914; /* Red for errors */
+      }
       .footer {
-        background-color: #111;
+        background-color: #0a0a0a; /* Even darker footer */
         padding: 30px 20px;
         text-align: center;
-        color: #ccc;
+        color: #555; /* Dark gray text */
         font-size: 14px;
-        border-top: 2px solid #e50914;
       }
       .ad-placeholder {
         display: none; /* hidden to avoid suspicion */
@@ -151,127 +246,279 @@
 
       /* Responsive adjustments */
       @media (max-width: 768px) {
+        .navbar {
+          flex-direction: column;
+          padding: 15px 20px;
+        }
+        .navbar nav a {
+          margin: 5px 10px;
+          font-size: 12px;
+        }
+        .hero-section {
+          padding: 0 20px;
+          height: 60vh; /* Reduce height on small screens */
+          align-items: center; /* Center content on small screens */
+          text-align: center;
+        }
         .hero-content {
           max-width: 100%;
         }
-        .spider-man-image-placeholder {
-          position: relative;
-          width: 80%;
-          height: 400px;
-          margin: 40px auto 0;
-          right: auto;
-          bottom: auto;
+        .hero-section h1 {
+          font-size: 3em;
         }
-        .quote-box {
-          position: relative;
-          top: auto;
-          right: auto;
-          max-width: 100%;
-          text-align: center;
-          margin-top: 30px;
+        .hero-section .subtitle {
+          font-size: 1em;
         }
-        .movie-posters {
-          justify-content: center;
-          flex-wrap: wrap;
+        .section h2 {
+          font-size: 2em;
         }
-        .share-button {
-          position: relative;
-          bottom: auto;
-          right: auto;
-          display: inline-block;
-          margin-top: 20px;
+        .three-col-grid,
+        .featured-grid {
+          grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
     <div class="navbar">
-      <div class="logo">MARVEL FANS</div>
+      <div class="logo">MARVEL FAN HUB</div>
       <nav>
-        <a href="#home">HOME</a>
-        <a href="#about">ABOUT US</a>
-        <a href="#gallery">GALLERY</a>
-        <a href="#contact">CONTACT</a>
+        <a href="#home">Home</a>
+        <a href="#content">Hub Content</a>
+        <a href="#eastereggs">Easter Eggs</a>
+        <a href="#activate">Subscribe</a>
+        <a href="#contact">Contact</a>
+        <a href="#glitch">Glitches</a>
       </nav>
     </div>
 
-    <div class="hero-section" id="home">
+    <header class="hero-section" id="home">
       <div class="hero-content">
-        <h1>SPIDER-MAN</h1>
-        <h2>PETER PARKER</h2>
+        <p class="subtitle">01 | MARVEL FAN HUB</p>
+        <h1>Explore the MCU</h1>
         <p>
-          Superhero and freelance photographer. Peter was bitten by a
-          radioactive spider while touring the medical super-corporation Oscorp
-          and soon found himself equipped with incredible powers. He's super
-          strong, super agile, capable of sensing danger, and able to shoot webs
-          out of his hands.
+          Dive deep into the details, secrets, and stories of your favorite
+          heroes.
         </p>
-        <div class="movie-posters">
-          <div class="movie-poster-placeholder">
-            Spider-Man: Homecoming (2017)
+        <button class="button">Get Started</button>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Section for content blocks like Film/Creative/Content Production -->
+      <section id="content" class="section">
+        <h2>Hub Content Categories</h2>
+        <p class="section-intro">
+          Explore different aspects of the Marvel Cinematic Universe through our
+          curated content.
+        </p>
+        <div class="three-col-grid">
+          <div class="content-block">
+            <img src="placeholder_content_1.jpg" alt="Category 1" />
+            <h3>Easter Eggs & Secrets</h3>
+            <p>Uncover hidden references and details in films and shows.</p>
           </div>
-          <div class="movie-poster-placeholder">
-            Spider-Man: Far From Home (2019)
+          <div class="content-block">
+            <img src="placeholder_content_2.jpg" alt="Category 2" />
+            <h3>Character Deep Dives</h3>
+            <p>
+              Learn more about the backstories and evolutions of your favorite
+              characters.
+            </p>
           </div>
-          <div class="movie-poster-placeholder">
-            Spider-Man: No Way Home (2021)
+          <div class="content-block">
+            <img src="placeholder_content_3.jpg" alt="Category 3" />
+            <h3>Theories & Discussions</h3>
+            <p>
+              Join the conversation and explore fan theories about the MCU's
+              future.
+            </p>
           </div>
         </div>
-      </div>
-      <!-- Placeholder for Spider-Man image -->
-      <div class="spider-man-image-placeholder"></div>
-      <!-- Placeholder for Quote -->
-      <div class="quote-box">
-        "I mean, what I do sometimes requires violence, but I'm not a violent
-        man, I'm really not. But I just.."
-        <em>- Peter Parker</em>
-      </div>
-      <a href="#" class="share-button">SHARE →</a>
+      </section>
+
+      <!-- Section for Featured Productions / Easter Eggs -->
+      <section id="eastereggs" class="section alt-background">
+        <h2>Featured Easter Eggs</h2>
+        <p class="section-intro">
+          Here are some of the most talked-about Easter eggs we've found across
+          the MCU.
+        </p>
+        <div class="featured-grid">
+          <div class="featured-item">
+            <img src="placeholder_easteregg_1.jpg" alt="Easter Egg 1" />
+            <div class="featured-overlay">
+              <h4>Captain America's Shield in Iron Man (2008)</h4>
+              <p>A blink-and-you'll-miss-it moment in Tony Stark's workshop.</p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_2.jpg" alt="Easter Egg 2" />
+            <div class="featured-overlay">
+              <h4>The Original Human Torch Android</h4>
+              <p>
+                A nod to Marvel's Golden Age in Captain America: The First
+                Avenger.
+              </p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_3.jpg" alt="Easter Egg 3" />
+            <div class="featured-overlay">
+              <h4>Earth-616 Designation in Far From Home</h4>
+              <p>
+                Confirming the main MCU reality in Spider-Man: Far From Home.
+              </p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_4.jpg" alt="Easter Egg 4" />
+            <div class="featured-overlay">
+              <h4>Odin's Fake Infinity Gauntlet</h4>
+              <p>Seen in Thor, later revealed to be a replica in Ragnarok.</p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_5.jpg" alt="Easter Egg 5" />
+            <div class="featured-overlay">
+              <h4>Dr. Strange Mention in Winter Soldier</h4>
+              <p>
+                A subtle tease of the Sorcerer Supreme before his solo film.
+              </p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_6.jpg" alt="Easter Egg 6" />
+            <div class="featured-overlay">
+              <h4>Howard the Duck Cameo</h4>
+              <p>
+                A surprise appearance in the post-credits of Guardians of the
+                Galaxy.
+              </p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_7.jpg" alt="Easter Egg 7" />
+            <div class="featured-overlay">
+              <h4>Stark Expo 2010</h4>
+              <p>Bringing a comic book staple to life in Iron Man 2.</p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_8.jpg" alt="Easter Egg 8" />
+            <div class="featured-overlay">
+              <h4>Project Pegasus Mention</h4>
+              <p>
+                A S.H.I.E.L.D. project with comic roots in Thor and The
+                Avengers.
+              </p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_9.jpg" alt="Easter Egg 9" />
+            <div class="featured-overlay">
+              <h4>The Wasp Costume Tease in Ant-Man</h4>
+              <p>Hinting at the original Wasp's history.</p>
+            </div>
+          </div>
+          <div class="featured-item">
+            <img src="placeholder_easteregg_10.jpg" alt="Easter Egg 10" />
+            <div class="featured-overlay">
+              <h4>Stan Lee Cameos</h4>
+              <p>The legendary appearances of Marvel creator Stan Lee.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activate Bot Section - Integrated into a relevant spot -->
+      <section id="activate" class="section">
+        <h2>Activate Your Bot Session</h2>
+        <p class="section-intro">
+          Unlock exclusive content and continue your quiz session by activating
+          your bot session below.
+        </p>
+
+        <div class="ad-placeholder">Advertisement Placeholder</div>
+
+        <button class="button" id="renewButton">Activate Session</button>
+
+        <div id="message"></div>
+      </section>
+
+      <!-- Section for Contact form or info -->
+      <section id="contact" class="section alt-background">
+        <h2>Get in Touch</h2>
+        <p class="section-intro">
+          Have questions or want to share your own finds? Contact us!
+        </p>
+        <div style="max-width: 500px; margin: auto">
+          <input
+            type="text"
+            placeholder="Name"
+            style="
+              width: 100%;
+              padding: 12px;
+              margin-bottom: 20px;
+              border-radius: 3px;
+              border: 1px solid #333;
+              background-color: #222;
+              color: #fff;
+            "
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            style="
+              width: 100%;
+              padding: 12px;
+              margin-bottom: 20px;
+              border-radius: 3px;
+              border: 1px solid #333;
+              background-color: #222;
+              color: #fff;
+            "
+          />
+          <textarea
+            placeholder="Your Message"
+            rows="6"
+            style="
+              width: 100%;
+              padding: 12px;
+              margin-bottom: 20px;
+              border-radius: 3px;
+              border: 1px solid #333;
+              background-color: #222;
+              color: #fff;
+            "
+          ></textarea>
+          <button class="button">Send Message</button>
+        </div>
+      </section>
+
+      <!-- New Section for Glitchy Image -->
+      <section id="glitch" class="section">
+        <h2>Multiverse Glitches Detected!</h2>
+        <p class="section-intro">
+          Witness moments where reality seems to break...
+        </p>
+        <div style="text-align: center">
+          <img
+            src="placeholder_glitch_image.jpg"
+            alt="Glitchy Image"
+            id="glitchy-image"
+          />
+        </div>
+      </section>
     </div>
 
-    <section id="about" class="section">
-      <h2>ABOUT US</h2>
+    <footer class="footer">
+      <p>&copy; 2023 Marvel Fan Hub. All rights reserved.</p>
       <p>
-        We are a community of Marvel enthusiasts dedicated to decoding every
-        Easter egg, reference, and twist hidden in the MCU. Join us and discover
-        the secrets you've missed!
+        This is a fan-made project and is not affiliated with Marvel Studios or
+        Disney.
       </p>
-      <!-- Easter eggs could be added here or in a separate section -->
-    </section>
-
-    <section id="gallery" class="section">
-      <h2>GALLERY</h2>
-      <p>Image gallery placeholder.</p>
-      <!-- Add image gallery content here -->
-    </section>
-
-    <section id="contact" class="section">
-      <h2>CONTACT</h2>
-      <p>Contact form or information placeholder.</p>
-      <!-- Add contact form or information here -->
-    </section>
-
-    <!-- Activate Bot Section - Adapted from previous requirement -->
-    <section id="activate" class="section">
-      <h2>ACTIVATE BOT / SUBSCRIBE</h2>
-      <p>
-        Your session has expired. Please subscribe again to continue enjoying
-        exclusive content.
-      </p>
-
-      <div class="ad-placeholder">Advertisement Placeholder</div>
-
-      <button class="button" id="renewButton">Subscribe</button>
-
-      <div id="message"></div>
-    </section>
-
-    <div class="footer">
-      <p>
-        &copy; 2025 Marvel Fans. Built by fans, for fans. No affiliation with
-        Marvel Studios.
-      </p>
-    </div>
+    </footer>
 
     <script>
       document
@@ -279,13 +526,17 @@
         .addEventListener("click", async () => {
           const urlParams = new URLSearchParams(window.location.search);
           const userId = urlParams.get("userId");
+          const messageDiv = document.getElementById("message");
 
           if (!userId) {
-            document.getElementById("message").innerText =
-              "Error: Missing user ID.";
-            document.getElementById("message").style.color = "red";
+            messageDiv.innerText =
+              "Error: Missing user ID in URL. Please use the link provided by the bot.";
+            messageDiv.className = "error"; // Use class for error styling
             return;
           }
+
+          messageDiv.innerText = "Activating session...";
+          messageDiv.className = ""; // Clear previous class
 
           try {
             const response = await fetch("/api/session/renew", {
@@ -299,18 +550,20 @@
             const data = await response.json();
 
             if (response.ok) {
-              document.getElementById("message").innerText = data.message;
-              document.getElementById("message").style.color = "green";
+              messageDiv.innerText =
+                data.message || "Session activated successfully!";
+              messageDiv.className = ""; // Default color for success
             } else {
-              document.getElementById(
-                "message"
-              ).innerText = `Error: ${data.message}`;
-              document.getElementById("message").style.color = "red";
+              messageDiv.innerText = `Error: ${
+                data.message || "Could not activate session."
+              }`;
+              messageDiv.className = "error"; // Use class for error styling
             }
           } catch (err) {
-            document.getElementById("message").innerText =
-              "Error subscribing. Try again later.";
-            document.getElementById("message").style.color = "red";
+            console.error("Fetch error:", err);
+            messageDiv.innerText =
+              "An error occurred while activating the session. Please try again later.";
+            messageDiv.className = "error"; // Use class for error styling
           }
         });
     </script>

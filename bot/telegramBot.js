@@ -33,32 +33,36 @@ const categoriesKeyboard = Markup.inlineKeyboard([
   [Markup.button.callback("🔙 Back to Menu", "main_menu")],
 ]);
 
-// Store user quiz state (question count, current question)
-const userQuizState = new Map();
-
-// Store user session state
-const userSessionState = new Map();
+// Removed in-memory user state - relying on backend for session checks
+// const userQuizState = new Map();
+// const userSessionState = new Map();
 
 // Function to fetch a random question from the backend
-async function fetchRandomQuestion(category, usedQuestions) {
+async function fetchRandomQuestion(category) {
   try {
+    // Note: The backend currently doesn't support filtering by used questions.
+    // Fetching a truly *random* unused question within a single quiz session
+    // would require backend changes to track quiz state per user.
     const url = `${API_URL}/api/questions/random?category=${encodeURIComponent(
       category
     )}`;
     const response = await axios.get(url);
 
     if (!response.data || !response.data.question || !response.data.options) {
+      console.error(
+        "Invalid response data for random question:",
+        response.data
+      );
       return null;
     }
 
-    // If this question has been used, try to get another one
-    if (usedQuestions.has(response.data._id)) {
-      return fetchRandomQuestion(category, usedQuestions);
-    }
+    // The backend currently doesn't prevent fetching already used questions
+    // within a single quiz session if the bot restarts or the backend logic
+    // is updated to track quiz state. For now, we proceed with the fetched question.
 
     return response.data;
   } catch (error) {
-    console.error("Error fetching question:", error.message);
+    console.error("Error fetching random question:", error.message);
     return null;
   }
 }
@@ -69,7 +73,11 @@ async function fetchCategoryQuestionCount(category) {
     const response = await axios.get(
       `${API_URL}/api/questions/count?category=${encodeURIComponent(category)}`
     );
-    return response.data.count;
+    if (response.data && typeof response.data.count === "number") {
+      return response.data.count;
+    }
+    console.error("Invalid response data for question count:", response.data);
+    return 0;
   } catch (error) {
     console.error("Error fetching question count:", error.message);
     return 0;
@@ -78,10 +86,11 @@ async function fetchCategoryQuestionCount(category) {
 
 // Function to create inline keyboard for question options
 function createOptionsKeyboard(options) {
-  if (!options || !Array.isArray(options)) {
-    console.error("Invalid options");
+  if (!options || !Array.isArray(options) || options.length === 0) {
+    console.error("Invalid or empty options array provided.");
+    // Provide a fallback keyboard or handle this error appropriately
     return Markup.inlineKeyboard([
-      [Markup.button.callback("Error loading options", "error")],
+      [Markup.button.callback("❌ Error Loading Options", "error")],
     ]);
   }
   const buttons = options.map((option, index) => [
@@ -92,58 +101,121 @@ function createOptionsKeyboard(options) {
   return Markup.inlineKeyboard(buttons);
 }
 
-// Function to check if user has an active session
+// Function to check if user has an active session using backend API
 async function checkUserSession(userId) {
   try {
+    // Use a GET request as per the API route definition
     const response = await axios.get(`${API_URL}/api/session/check/${userId}`);
-    return !response.data.expired;
+    // Expecting response.data = { expired: true/false }
+    if (response.data && typeof response.data.expired === "boolean") {
+      return !response.data.expired; // Return true if not expired
+    }
+    console.error("Invalid response data for session check:", response.data);
+    return false; // Assume session is not active if response is invalid
   } catch (error) {
-    console.error("Error checking session:", error.message);
-    return false;
+    // Log specific error details
+    console.error(
+      "Error checking session for user",
+      userId,
+      ":",
+      error.message
+    );
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("Error request data:", error.request);
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      console.error("Error message:", error.message);
+    }
+    return false; // Assume session is not active on error
   }
 }
 
 // Function to show session expired message
-async function showSessionExpiredMessage(ctx, userId) {
+async function showSessionExpiredMessage(ctx, userId, messageId) {
   const expiredMessage =
     `🔒 Session Required\n\n` +
-    `❌ Your 3-minute session has expired.\n\n` +
+    `❌ Your session has expired or is not active.\n\n` +
     `To continue using the quiz:\n` +
     `1️⃣ Visit our website: ${WEB_URL}?userId=${userId}\n` +
-    `2️⃣ Click the "Renew Bot" button\n` +
+    `2️⃣ Click the "Activate Session" button\n` +
     `3️⃣ Return here to start quizzing!\n\n` +
     `Need help? Contact our support team.`;
 
   const keyboard = Markup.inlineKeyboard([
-    [Markup.button.url("🔗 Renew Session", `${WEB_URL}?userId=${userId}`)],
-    [Markup.button.callback("🔄 Check Session", "check_session")],
+    [Markup.button.url("🔗 Activate Session", `${WEB_URL}?userId=${userId}`)],
+    [Markup.button.callback("🔄 Check Session Status", "check_session")], // Updated button text
   ]);
 
   try {
-    await ctx.editMessageText(expiredMessage, keyboard);
+    // Attempt to edit the message if messageId is provided, otherwise reply
+    if (messageId) {
+      await ctx.telegram.editMessageText(
+        ctx.chat.id,
+        messageId,
+        undefined,
+        expiredMessage,
+        { reply_markup: keyboard.reply_markup }
+      );
+    } else {
+      await ctx.reply(expiredMessage, keyboard);
+    }
   } catch (editError) {
+    // If editing fails (e.g., message too old or already modified), send a new message
+    console.error("Error editing message, sending new one:", editError.message);
     await ctx.reply(expiredMessage, keyboard);
   }
 }
 
-// Function to start new session
+// Function to start new session via backend API
 async function startNewSession(userId) {
   try {
+    // Use a POST request as per the API route definition
     const response = await axios.post(`${API_URL}/api/session/start`, {
       userId: userId,
     });
-    console.log("New session started:", response.data);
-    return true;
+    // Expecting response.data = { message: "...", startTime: "..." }
+    if (response.data && response.data.message) {
+      console.log("New session started/updated via API:", response.data);
+      return true; // Indicate success based on API response structure
+    }
+    console.error("Invalid response data for start session:", response.data);
+    return false; // Indicate failure if API response is invalid
   } catch (error) {
-    console.error("Error starting session:", error.message);
-    return false;
+    // Log specific error details
+    console.error(
+      "Error starting new session for user",
+      userId,
+      ":",
+      error.message
+    );
+    if (error.response) {
+      console.error("Error response data:", error.response.data);
+      console.error("Error response status:", error.response.status);
+      console.error("Error response headers:", error.response.headers);
+    } else if (error.request) {
+      console.error("Error request data:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+    return false; // Indicate failure on error
   }
 }
 
-// Function to start a new quiz for a user
+// Function to start a new quiz for a user (simplified - relies on backend for questions)
 async function startQuiz(ctx, category) {
   try {
     const userId = ctx.from.id;
+    // We no longer store quiz state in memory here.
+    // Quiz progress (question count, used questions within a single quiz run)
+    // will reset if the bot restarts.
+
     const totalQuestions = await fetchCategoryQuestionCount(category);
 
     if (totalQuestions === 0) {
@@ -154,19 +226,8 @@ async function startQuiz(ctx, category) {
       return;
     }
 
-    userQuizState.set(userId, {
-      category,
-      questionCount: 0,
-      currentQuestion: null,
-      usedQuestions: new Set(),
-      totalQuestions: totalQuestions,
-      ctx: ctx, // Store ctx for session checks
-    });
-
-    const question = await fetchRandomQuestion(
-      category,
-      userQuizState.get(userId).usedQuestions
-    );
+    // Fetch the first question
+    const question = await fetchRandomQuestion(category);
 
     if (!question) {
       await ctx.editMessageText(
@@ -176,51 +237,47 @@ async function startQuiz(ctx, category) {
       return;
     }
 
-    userQuizState.get(userId).currentQuestion = question;
-    userQuizState.get(userId).usedQuestions.add(question._id);
+    // Store the current question data temporarily with the context or as part of
+    // the action data if passing to answer handlers. For simplicity here, we'll
+    // just display the question. A robust quiz would pass question ID and options
+    // in the callback_data or store state on the backend.
+
+    // Display the question (simplified - does not track question number within a quiz run)
     await ctx.editMessageText(
-      `Category: ${category}\nTotal Questions: ${totalQuestions}\n\nQuestion ${
-        userQuizState.get(userId).questionCount + 1
-      }:\n\n${question.question}`,
+      `Category: ${category}\n\nQuestion:\n\n${question.question}`,
       createOptionsKeyboard(question.options)
     );
   } catch (error) {
     console.error("Error in startQuiz:", error.message);
-    throw error;
+    // Inform the user about the error
+    await ctx.reply("An error occurred while trying to start the quiz.");
   }
 }
 
-// Modify the start command
+// Modify the start command to only check session and show main menu/expired message
 bot.start(async (ctx) => {
   const userId = ctx.from.id;
-  const hasActiveSession = await checkUserSession(userId);
+  // Always attempt to start/update a session first
+  const sessionStarted = await startNewSession(userId);
 
-  if (hasActiveSession) {
+  if (sessionStarted) {
+    // If session started/updated successfully, show the main menu
     await ctx.reply(
-      "✅ Your session is active!\n\n" +
-        "⏰ You have 3 minutes of access.\n" +
+      "👋 Welcome to PunjabiExamBot!\n\n" +
+        "✅ Your session is active!\n" +
+        "⏰ You have 3 minutes of access.\n\n" +
         "Choose an option from the menu below:",
       mainKeyboard
     );
   } else {
-    // Start new session
-    const sessionStarted = await startNewSession(userId);
-
-    if (sessionStarted) {
-      await ctx.reply(
-        "👋 Welcome to PunjabiExamBot!\n\n" +
-          "✅ Your session has been activated!\n" +
-          "⏰ You have 3 minutes of access.\n\n" +
-          "Choose an option from the menu below:",
-        mainKeyboard
-      );
-    } else {
-      await showSessionExpiredMessage(ctx, userId);
-    }
+    // If starting/updating session failed, show the expired message
+    await showSessionExpiredMessage(ctx, userId);
   }
 });
 
 bot.action("main_menu", async (ctx) => {
+  // Acknowledge the callback query to remove the loading state on the button
+  await ctx.answerCbQuery();
   await ctx.editMessageText(
     "Welcome to PunjabiExamBot! Choose an option from the menu:",
     mainKeyboard
@@ -228,6 +285,7 @@ bot.action("main_menu", async (ctx) => {
 });
 
 bot.action("start_quiz", async (ctx) => {
+  await ctx.answerCbQuery();
   // This will be replaced with actual quiz logic later
   await ctx.editMessageText(
     "Please choose a category first:",
@@ -236,165 +294,139 @@ bot.action("start_quiz", async (ctx) => {
 });
 
 bot.action("choose_category", async (ctx) => {
+  await ctx.answerCbQuery();
   const userId = ctx.from.id;
   const hasActiveSession = await checkUserSession(userId);
 
   if (!hasActiveSession) {
-    await showSessionExpiredMessage(ctx, userId);
+    // Pass the message ID to showSessionExpiredMessage to attempt editing the current message
+    await showSessionExpiredMessage(
+      ctx,
+      userId,
+      ctx.callbackQuery.message.message_id
+    );
     return;
   }
 
   await ctx.editMessageText("Please choose a category:", categoriesKeyboard);
 });
 
-// Handle session check button
+// Handle category selection actions (e.g., "cat_ancient", "cat_gurus", etc.)
+bot.action(
+  /cat_(ancient|gurus|banda|ranjit|british|post_ind|geography)/,
+  async (ctx) => {
+    await ctx.answerCbQuery();
+    const userId = ctx.from.id;
+    const category = ctx.match[1];
+
+    const hasActiveSession = await checkUserSession(userId);
+
+    if (!hasActiveSession) {
+      // Pass the message ID to showSessionExpiredMessage to attempt editing the current message
+      await showSessionExpiredMessage(
+        ctx,
+        userId,
+        ctx.callbackQuery.message.message_id
+      );
+      return;
+    }
+
+    // Start the quiz for the selected category
+    await startQuiz(ctx, category);
+  }
+);
+
+// Handle session check button action
 bot.action("check_session", async (ctx) => {
+  await ctx.answerCbQuery();
   const userId = ctx.from.id;
+
   const hasActiveSession = await checkUserSession(userId);
 
   if (hasActiveSession) {
     await ctx.editMessageText(
-      "✅ Your session is active!\n\n" +
-        "⏰ You have 3 minutes of access.\n" +
-        "Choose an option from the menu below:",
+      "✅ Your session is currently active!",
       mainKeyboard
     );
   } else {
-    await showSessionExpiredMessage(ctx, userId);
-  }
-});
-
-// Modify category selection to check session
-bot.action(/cat_(.+)/, async (ctx) => {
-  const userId = ctx.from.id;
-  const hasActiveSession = await checkUserSession(userId);
-
-  if (!hasActiveSession) {
-    await showSessionExpiredMessage(ctx, userId);
-    return;
-  }
-
-  const categoryMap = {
-    ancient: "Ancient History of Punjab",
-    gurus: "Sikh Gurus",
-    banda: "Banda Singh Bahadur and Sikh Misls",
-    ranjit: "Era of Maharaja Ranjit Singh",
-    british: "British Rule and Freedom Struggle in Punjab",
-    post_ind: "Post-Independence Punjab",
-    geography: "Punjab's Geography, Culture and Heritage - Historical Context",
-  };
-  const category = categoryMap[ctx.match[1]];
-  if (!category) {
-    await ctx.editMessageText("Invalid category selected.", mainKeyboard);
-    return;
-  }
-
-  try {
-    await startQuiz(ctx, category);
-  } catch (error) {
-    console.error("Error starting quiz:", error);
-    await ctx.editMessageText(
-      "Sorry, there was an error starting the quiz. Please try again.",
-      mainKeyboard
+    // Pass the message ID to showSessionExpiredMessage to attempt editing the current message
+    await showSessionExpiredMessage(
+      ctx,
+      userId,
+      ctx.callbackQuery.message.message_id
     );
   }
 });
 
-// Handle user's answer
+// Handle answer button actions (e.g., "ans_0", "ans_1", etc.)
 bot.action(/ans_(\d+)/, async (ctx) => {
+  await ctx.answerCbQuery("Processing answer..."); // Acknowledge callback immediately
   const userId = ctx.from.id;
+  const chosenOptionIndex = parseInt(ctx.match[1], 10);
+
   const hasActiveSession = await checkUserSession(userId);
 
   if (!hasActiveSession) {
-    await showSessionExpiredMessage(ctx, userId);
-    return;
-  }
-
-  const userState = userQuizState.get(userId);
-  if (!userState) {
-    await ctx.editMessageText(
-      "Quiz session not found. Please start a new quiz.",
-      mainKeyboard
+    // Pass the message ID to showSessionExpiredMessage to attempt editing the current message
+    await showSessionExpiredMessage(
+      ctx,
+      userId,
+      ctx.callbackQuery.message.message_id
     );
     return;
   }
 
-  const selectedIndex = parseInt(ctx.match[1]);
-  const currentQuestion = userState.currentQuestion;
-  const selectedAnswer = currentQuestion.options[selectedIndex];
-  const isCorrect = selectedAnswer === currentQuestion.answer;
+  // --- Answer Checking Logic (Simplified) ---
+  // In a real quiz bot, you would need to retrieve the question that was sent
+  // to the user's message. This requires storing the question data (including
+  // the correct answer) either in the bot's temporary state associated with
+  // the message ID, or preferably, storing quiz progress state on the backend.
+  // Since we removed in-memory state and the backend doesn't currently track
+  // per-quiz-run state, we cannot reliably check the answer here without
+  // refetching the question (which might return a different question).
 
-  let message = `Your answer: ${selectedAnswer}\n`;
-  message += isCorrect
-    ? "✅ Correct!"
-    : `❌ Incorrect. The correct answer is: ${currentQuestion.answer}`;
+  // For now, we will provide a placeholder response.
+  // TODO: Implement robust answer checking by linking user's response
+  //       to the specific question they were asked.
 
-  userState.questionCount++;
+  // Example of how you *might* get the message content if needed (not reliable for answer checking)
+  // const messageText = ctx.callbackQuery.message.text;
+  // console.log("User answered on message:", messageText);
 
-  // Check if we've used all questions
-  if (userState.questionCount >= userState.totalQuestions) {
-    message += `\n\nQuiz completed! You've answered all ${userState.totalQuestions} questions. Thank you for playing!`;
-    userQuizState.delete(userId);
-    await ctx.editMessageText(message, mainKeyboard);
-    return;
-  }
-
-  // Fetch and ask the next question
-  const nextQuestion = await fetchRandomQuestion(
-    userState.category,
-    userState.usedQuestions
+  await ctx.editMessageText(
+    "Thanks for your answer!\n\n💡 Note: Answer checking is not yet fully implemented in this simplified version.\n\nChoose next step:",
+    Markup.inlineKeyboard([
+      [Markup.button.callback("📚 Choose Another Category", "choose_category")],
+      [Markup.button.callback("🔙 Main Menu", "main_menu")],
+    ])
   );
-  if (nextQuestion) {
-    userState.currentQuestion = nextQuestion;
-    userState.usedQuestions.add(nextQuestion._id);
-    await ctx.editMessageText(message);
-    await ctx.reply(
-      `Category: ${userState.category}\nTotal Questions: ${
-        userState.totalQuestions
-      }\n\nQuestion ${userState.questionCount + 1}:\n\n${
-        nextQuestion.question
-      }`,
-      createOptionsKeyboard(nextQuestion.options)
-    );
-  } else {
-    message += `\n\nQuiz completed! You've answered ${userState.questionCount} out of ${userState.totalQuestions} questions. Thank you for playing!`;
-    userQuizState.delete(userId);
-    await ctx.editMessageText(message, mainKeyboard);
-  }
+
+  // In a complete implementation:
+  // 1. Retrieve the question associated with ctx.callbackQuery.message.message_id.
+  // 2. Compare chosenOptionIndex with the correct answer index from the stored question.
+  // 3. Provide feedback (correct/incorrect).
+  // 4. Update quiz state (increment question count, add to used questions).
+  // 5. Fetch and send the next question or end the quiz.
 });
 
-// Handle exit quiz
+// Handle exit quiz action
 bot.action("exit_quiz", async (ctx) => {
-  const userId = ctx.from.id;
-  userQuizState.delete(userId);
+  await ctx.answerCbQuery();
+  // Remove user's state if it were stored in memory (no longer needed)
+  // userQuizState.delete(ctx.from.id);
   await ctx.editMessageText(
-    "Quiz ended. You can start a new quiz by choosing a category.",
+    "👋 You have exited the quiz. Choose an option from the menu:",
     mainKeyboard
   );
 });
 
-// Add a timer to check session expiration
-setInterval(async () => {
-  for (const [userId, state] of userQuizState.entries()) {
-    try {
-      const response = await axios.get(
-        `${API_URL}/api/session/check/${userId}`
-      );
-      if (response.data.expired) {
-        const ctx = state.ctx;
-        if (ctx) {
-          await showSessionExpiredMessage(ctx, userId);
-          userQuizState.delete(userId);
-        }
-      }
-    } catch (error) {
-      console.error("Error in session check interval:", error.message);
-    }
-  }
-}, 10000); // Check every 10 seconds for testing
+// Handle errors
+bot.catch((err, ctx) => {
+  console.error(`Error for ${ctx.updateType}`, err);
+});
 
+// Start the bot
 bot.launch();
 
-// Enable graceful stop
 process.once("SIGINT", () => bot.stop("SIGINT"));
 process.once("SIGTERM", () => bot.stop("SIGTERM"));
